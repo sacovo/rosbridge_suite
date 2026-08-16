@@ -170,7 +170,14 @@ def _get_client(
         callback_group=MutuallyExclusiveCallbackGroup(),
         qos_profile=qos_profile_parameters,
     )
-    _cached_clients[service_name] = _CachedClient(use_count=0, last_used_time=Time(), client=client)
+    # Stamp with the node's clock rather than a bare Time(): that defaults to
+    # ClockType.SYSTEM_TIME, while _cleanup_timer_callback subtracts it from
+    # _node.get_clock().now(). rclpy refuses to subtract Times of differing
+    # clock types, so under use_sim_time the first cached client makes the
+    # 0.5s cleanup timer raise on every tick.
+    _cached_clients[service_name] = _CachedClient(
+        use_count=0, last_used_time=_node.get_clock().now(), client=client
+    )
     return client
 
 
