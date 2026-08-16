@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ros2action.api import get_action_names_and_types
+from rclpy.action import get_action_names_and_types
 from ros2interface.api import type_completer
 from ros2node.api import (
     get_node_names,
@@ -366,7 +366,12 @@ def get_action_type(action_name: str) -> str:
 
     If the action does not exist, an empty string is returned.
     """
-    names_and_types = get_action_names_and_types(node=_node)
+    # rclpy's variant queries the graph off any node. ros2action.api's wrapper
+    # is just `node.get_action_names_and_types()`, a method that only exists on
+    # ros2cli's DirectNode - on the plain rclpy node rosapi passes it raises
+    # AttributeError, and since rosapi_node runs a bare rclpy.spin() that takes
+    # the whole node down, along with every other /rosapi/* service.
+    names_and_types = get_action_names_and_types(_node)
 
     for name, types in names_and_types:
         if name == action_name and types:
